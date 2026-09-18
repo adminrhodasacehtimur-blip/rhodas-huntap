@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -30,104 +30,225 @@ export default function LoginPage() {
       return;
     }
 
-    // Login berhasil → masuk ke Dashboard RHODAS
+    // Setelah login langsung ke Dashboard RHODAS
     router.replace("/");
     router.refresh();
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-          {/* HEADER */}
-          <div className="text-center mb-8">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white text-2xl font-bold shadow-lg">
-              RH
-            </div>
+    <main className="loginPage">
+      <style jsx>{`
+        * {
+          box-sizing: border-box;
+        }
 
-            <h1 className="text-3xl font-bold text-slate-900">
-              PT RHODAS
-            </h1>
+        .loginPage {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          background:
+            radial-gradient(
+              circle at top left,
+              rgba(29, 114, 232, 0.12),
+              transparent 35%
+            ),
+            #f4f7fb;
+          font-family:
+            Inter,
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+        }
 
-            <p className="text-xl font-semibold text-blue-700 mt-2">
-              Sistem Administrasi Huntap
-            </p>
+        .loginCard {
+          width: 100%;
+          max-width: 430px;
+          background: white;
+          border: 1px solid #e4e9f0;
+          border-radius: 18px;
+          padding: 34px;
+          box-shadow: 0 20px 50px rgba(20, 34, 56, 0.09);
+        }
 
-            <p className="text-slate-500 mt-2">
-              Cabang Aceh Timur
-            </p>
+        .logo {
+          width: 58px;
+          height: 58px;
+          border-radius: 16px;
+          background: #1d72e8;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 27px;
+          font-weight: 800;
+          margin-bottom: 18px;
+        }
+
+        .title {
+          margin: 0;
+          color: #142238;
+          font-size: 25px;
+          font-weight: 800;
+        }
+
+        .subtitle {
+          margin: 7px 0 28px;
+          color: #7c8798;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .label {
+          display: block;
+          margin-bottom: 7px;
+          color: #3e4c61;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .input {
+          width: 100%;
+          height: 46px;
+          padding: 0 13px;
+          border: 1px solid #dfe5ed;
+          border-radius: 10px;
+          outline: none;
+          background: white;
+          color: #26344b;
+          font-size: 13px;
+        }
+
+        .input:focus {
+          border-color: #1d72e8;
+          box-shadow: 0 0 0 3px rgba(29, 114, 232, 0.1);
+        }
+
+        .field {
+          margin-bottom: 17px;
+        }
+
+        .loginButton {
+          width: 100%;
+          height: 47px;
+          margin-top: 6px;
+          border: 0;
+          border-radius: 10px;
+          background: #1d72e8;
+          color: white;
+          font-size: 13px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .loginButton:hover {
+          background: #1766d0;
+        }
+
+        .loginButton:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+
+        .error {
+          margin-bottom: 17px;
+          padding: 12px 13px;
+          border: 1px solid #f0cccc;
+          border-radius: 9px;
+          background: #fff3f3;
+          color: #bd3d3d;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .footer {
+          margin-top: 24px;
+          text-align: center;
+          color: #9aa4b2;
+          font-size: 10px;
+          line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+          .loginCard {
+            padding: 27px 22px;
+          }
+
+          .title {
+            font-size: 22px;
+          }
+        }
+      `}</style>
+
+      <div className="loginCard">
+        <div className="logo">R</div>
+
+        <h1 className="title">
+          RHODAS HUNTAP
+        </h1>
+
+        <p className="subtitle">
+          Sistem Administrasi Hunian Tetap
+          <br />
+          PT RHODAS Cabang Aceh Timur
+        </p>
+
+        <form onSubmit={handleLogin}>
+          <div className="field">
+            <label className="label">
+              Email
+            </label>
+
+            <input
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Masukkan email"
+              autoComplete="email"
+              required
+            />
           </div>
 
-          {/* FORM LOGIN */}
-          <form onSubmit={handleLogin} className="space-y-5">
-            {/* EMAIL */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block font-medium text-slate-700 mb-2"
-              >
-                Email
-              </label>
+          <div className="field">
+            <label className="label">
+              Password
+            </label>
 
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Masukkan email"
-                autoComplete="email"
-                required
-                disabled={loading}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100"
-              />
-            </div>
-
-            {/* PASSWORD */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block font-medium text-slate-700 mb-2"
-              >
-                Password
-              </label>
-
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan password"
-                autoComplete="current-password"
-                required
-                disabled={loading}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100"
-              />
-            </div>
-
-            {/* ERROR */}
-            {error && (
-              <div
-                role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-              >
-                {error}
-              </div>
-            )}
-
-            {/* BUTTON */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 transition disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? "Memproses..." : "Masuk"}
-            </button>
-          </form>
-
-          {/* FOOTER */}
-          <div className="text-center mt-8 text-sm text-slate-500">
-            PT RHODAS — Cabang Aceh Timur
+            <input
+              className="input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Masukkan password"
+              autoComplete="current-password"
+              required
+            />
           </div>
+
+          {error && (
+            <div className="error">
+              {error}
+            </div>
+          )}
+
+          <button
+            className="loginButton"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Memproses Login..." : "Login"}
+          </button>
+        </form>
+
+        <div className="footer">
+          Sistem Administrasi Huntap
+          <br />
+          PT RHODAS Cabang Aceh Timur
         </div>
       </div>
     </main>
