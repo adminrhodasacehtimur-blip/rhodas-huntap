@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
@@ -32,7 +32,7 @@ const tahapan = [
   "Selesai",
 ];
 
-export default function ProgressPage() {
+function ProgressContent() {
   const supabase = createClient();
   const searchParams = useSearchParams();
 
@@ -959,6 +959,12 @@ export default function ProgressPage() {
 
       </div>
     </main>
+  );
+}export default function ProgressPage() {
+  return (
+    <Suspense fallback={<div>Memuat Progress...</div>}>
+      <ProgressContent />
+    </Suspense>
   );
 }
 

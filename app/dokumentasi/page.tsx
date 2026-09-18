@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
@@ -33,7 +33,7 @@ const tahapan = [
   "Selesai",
 ];
 
-export default function DokumentasiPage() {
+function DokumentasiContent() {
   const supabase = createClient();
   const searchParams = useSearchParams();
 
@@ -1196,6 +1196,12 @@ export default function DokumentasiPage() {
       )}
 
     </main>
+  );
+}export default function DokumentasiPage() {
+  return (
+    <Suspense fallback={<div>Memuat Dokumentasi Foto...</div>}>
+      <DokumentasiContent />
+    </Suspense>
   );
 }
 
