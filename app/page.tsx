@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
 type Huntap = {
@@ -52,17 +53,13 @@ function formatPersen(value: number) {
 function getStatusLabel(status: string | null) {
   if (!status) return "Belum Mulai";
 
-  if (
-    status.toLowerCase() === "selesai" ||
-    status.toLowerCase() === "selesai 100%"
-  ) {
+  const value = status.toLowerCase();
+
+  if (value === "selesai" || value === "selesai 100%") {
     return "Selesai";
   }
 
-  if (
-    status.toLowerCase().includes("pembangunan") ||
-    status.toLowerCase().includes("proses")
-  ) {
+  if (value.includes("pembangunan") || value.includes("proses")) {
     return "Sedang Pembangunan";
   }
 
@@ -80,10 +77,12 @@ function getStatusClass(status: string | null) {
 
 export default function DashboardPage() {
   const supabase = createClient();
+  const router = useRouter();
 
   const [huntap, setHuntap] = useState<Huntap[]>([]);
   const [kontraktor, setKontraktor] = useState<Kontraktor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -143,6 +142,22 @@ export default function DashboardPage() {
     setHuntap((huntapData || []) as Huntap[]);
     setKontraktor((kontraktorData || []) as Kontraktor[]);
     setLoading(false);
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    setErrorMessage("");
+
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      setErrorMessage(`Gagal keluar: ${error.message}`);
+      setLoggingOut(false);
+      return;
+    }
+
+    router.replace("/auth/login");
+    router.refresh();
   }
 
   useEffect(() => {
@@ -305,12 +320,16 @@ export default function DashboardPage() {
           background: #f4f7fb;
           color: #172033;
           font-family:
-            Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-            "Segoe UI", sans-serif;
+            Inter, ui-sans-serif, system-ui, -apple-system,
+            BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
         a {
           text-decoration: none;
+        }
+
+        button {
+          font-family: inherit;
         }
 
         .dashboard {
@@ -351,13 +370,11 @@ export default function DashboardPage() {
           justify-content: center;
           font-size: 21px;
           font-weight: 800;
-          box-shadow: 0 8px 18px rgba(29, 114, 232, 0.3);
         }
 
         .brandTitle {
           font-size: 15px;
           font-weight: 800;
-          letter-spacing: 0.2px;
         }
 
         .brandSubtitle {
@@ -402,14 +419,12 @@ export default function DashboardPage() {
         .menuItem.active {
           background: #1d72e8;
           color: white;
-          box-shadow: 0 7px 18px rgba(29, 114, 232, 0.23);
         }
 
         .menuIcon {
           width: 26px;
           text-align: center;
           font-size: 18px;
-          opacity: 0.95;
         }
 
         .sidebarBottom {
@@ -433,7 +448,6 @@ export default function DashboardPage() {
           margin-top: 5px;
           font-size: 12px;
           font-weight: 700;
-          color: #dce5f0;
         }
 
         .main {
@@ -457,7 +471,6 @@ export default function DashboardPage() {
         .topTitle {
           font-size: 18px;
           font-weight: 800;
-          color: #152238;
         }
 
         .topSubtitle {
@@ -469,30 +482,42 @@ export default function DashboardPage() {
         .topRight {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         }
 
-        .refreshButton {
+        .refreshButton,
+        .logoutButton {
           height: 38px;
-          padding: 0 14px;
-          border: 1px solid #dfe5ed;
-          background: white;
+          padding: 0 13px;
           border-radius: 9px;
-          color: #445269;
           font-size: 12px;
           font-weight: 700;
           cursor: pointer;
         }
 
-        .refreshButton:hover {
-          background: #f7f9fc;
+        .refreshButton {
+          border: 1px solid #dfe5ed;
+          background: white;
+          color: #445269;
+        }
+
+        .logoutButton {
+          border: 1px solid #f0caca;
+          background: #fff5f5;
+          color: #c43d3d;
+        }
+
+        .refreshButton:disabled,
+        .logoutButton:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .adminBadge {
           display: flex;
           align-items: center;
-          gap: 9px;
-          padding: 6px 11px 6px 7px;
+          gap: 8px;
+          padding: 5px 9px 5px 6px;
           border: 1px solid #e5e9ef;
           border-radius: 30px;
         }
@@ -531,7 +556,6 @@ export default function DashboardPage() {
         .welcomeTitle {
           margin: 0;
           font-size: 27px;
-          letter-spacing: -0.5px;
           color: #142238;
         }
 
@@ -558,14 +582,16 @@ export default function DashboardPage() {
           margin-bottom: 20px;
         }
 
-        .statCard {
+        .statCard,
+        .card {
           background: white;
-          border: 1px solid #e6ebf1;
+          border: 1px solid #e5eaf0;
           border-radius: 14px;
-          padding: 19px;
-          position: relative;
-          overflow: hidden;
           box-shadow: 0 4px 18px rgba(26, 42, 65, 0.035);
+        }
+
+        .statCard {
+          padding: 19px;
         }
 
         .statTop {
@@ -612,17 +638,15 @@ export default function DashboardPage() {
           color: #18864b;
         }
 
-        .redIcon {
-          background: #fff0f0;
-          color: #d64c4c;
+        .grayIcon {
+          background: #edf1f5;
+          color: #687486;
         }
 
         .statValue {
           margin-top: 14px;
           font-size: 29px;
-          line-height: 1;
           font-weight: 800;
-          color: #172238;
         }
 
         .statFooter {
@@ -638,13 +662,6 @@ export default function DashboardPage() {
           margin-bottom: 20px;
         }
 
-        .card {
-          background: white;
-          border: 1px solid #e5eaf0;
-          border-radius: 14px;
-          box-shadow: 0 4px 18px rgba(26, 42, 65, 0.035);
-        }
-
         .cardHeader {
           padding: 20px 21px 16px;
           display: flex;
@@ -656,7 +673,6 @@ export default function DashboardPage() {
         .cardTitle {
           font-size: 14px;
           font-weight: 800;
-          color: #172238;
         }
 
         .cardSubtitle {
@@ -685,7 +701,7 @@ export default function DashboardPage() {
           justify-content: center;
           position: relative;
           background: conic-gradient(
-            #1d72e8 ${rataRataProgress * 1}%,
+            #1d72e8 ${rataRataProgress}%,
             #e8edf4 0
           );
         }
@@ -708,13 +724,11 @@ export default function DashboardPage() {
         .circleNumber {
           font-size: 27px;
           font-weight: 800;
-          color: #172238;
         }
 
         .circleLabel {
           font-size: 10px;
           color: #8a94a4;
-          margin-top: 1px;
         }
 
         .progressDetails {
@@ -723,10 +737,6 @@ export default function DashboardPage() {
 
         .detailRow {
           margin-bottom: 15px;
-        }
-
-        .detailRow:last-child {
-          margin-bottom: 0;
         }
 
         .detailHeader {
@@ -787,13 +797,6 @@ export default function DashboardPage() {
           border: 1px solid #e5eaf0;
           border-radius: 11px;
           background: #fafbfd;
-          transition: 0.2s ease;
-        }
-
-        .quickAction:hover {
-          border-color: #bcd4f4;
-          background: #f5f9ff;
-          transform: translateY(-1px);
         }
 
         .quickIcon {
@@ -837,7 +840,6 @@ export default function DashboardPage() {
         .assignmentNumber {
           font-size: 23px;
           font-weight: 800;
-          color: #172238;
         }
 
         .assignmentLabel {
@@ -863,7 +865,6 @@ export default function DashboardPage() {
           border: 1px solid #e5eaf0;
           border-radius: 12px;
           padding: 17px;
-          background: #fff;
         }
 
         .contractorHead {
@@ -883,13 +884,11 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: center;
           font-weight: 800;
-          font-size: 17px;
         }
 
         .contractorName {
           font-size: 13px;
           font-weight: 800;
-          color: #1d2b42;
         }
 
         .contractorType {
@@ -914,7 +913,6 @@ export default function DashboardPage() {
         .contractorStatNumber {
           font-size: 16px;
           font-weight: 800;
-          color: #26344b;
         }
 
         .contractorStatLabel {
@@ -984,7 +982,6 @@ export default function DashboardPage() {
           border-radius: 7px 7px 3px 3px;
           background: #5a91d8;
           min-height: 5px;
-          transition: height 0.3s ease;
         }
 
         .distributionLabel {
@@ -1015,7 +1012,6 @@ export default function DashboardPage() {
           font-size: 10px;
           font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: 0.4px;
           white-space: nowrap;
         }
 
@@ -1025,10 +1021,6 @@ export default function DashboardPage() {
           font-size: 11px;
           color: #455267;
           white-space: nowrap;
-        }
-
-        tbody tr:hover {
-          background: #fafcff;
         }
 
         .kode {
@@ -1043,7 +1035,6 @@ export default function DashboardPage() {
 
         .status {
           display: inline-flex;
-          align-items: center;
           padding: 5px 9px;
           border-radius: 20px;
           font-size: 9px;
@@ -1089,7 +1080,6 @@ export default function DashboardPage() {
         .tableProgressText {
           font-size: 10px;
           font-weight: 800;
-          color: #435168;
         }
 
         .empty {
@@ -1113,7 +1103,7 @@ export default function DashboardPage() {
           text-align: center;
           color: #9aa4b2;
           font-size: 10px;
-          padding: 5px 0 0;
+          padding-top: 20px;
         }
 
         .mobileMenuButton {
@@ -1164,10 +1154,6 @@ export default function DashboardPage() {
             padding: 0 18px;
           }
 
-          .topTitle {
-            font-size: 15px;
-          }
-
           .content {
             padding: 22px 18px 35px;
           }
@@ -1212,6 +1198,18 @@ export default function DashboardPage() {
           .dateBadge {
             display: none;
           }
+
+          .topRight {
+            gap: 5px;
+          }
+
+          .refreshButton {
+            padding: 0 8px;
+          }
+
+          .logoutButton {
+            padding: 0 8px;
+          }
         }
       `}</style>
 
@@ -1219,6 +1217,7 @@ export default function DashboardPage() {
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="brand">
           <div className="brandLogo">R</div>
+
           <div>
             <div className="brandTitle">PT RHODAS</div>
             <div className="brandSubtitle">Cabang Aceh Timur</div>
@@ -1251,18 +1250,27 @@ export default function DashboardPage() {
 
       {/* MAIN */}
       <main className="main">
-        {/* TOPBAR */}
         <header className="topbar">
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
             <button
               className="mobileMenuButton"
               onClick={() => setSidebarOpen(!sidebarOpen)}
+              type="button"
             >
               ☰
             </button>
 
             <div>
-              <div className="topTitle">Dashboard Administrasi Huntap</div>
+              <div className="topTitle">
+                Dashboard Administrasi Huntap
+              </div>
+
               <div className="topSubtitle">
                 Monitoring administrasi dan pembangunan Hunian Tetap
               </div>
@@ -1273,15 +1281,28 @@ export default function DashboardPage() {
             <button
               className="refreshButton"
               onClick={loadDashboard}
-              disabled={loading}
+              disabled={loading || loggingOut}
+              type="button"
             >
               ↻ {loading ? "Memuat..." : "Refresh"}
             </button>
 
             <div className="adminBadge">
               <div className="adminAvatar">A</div>
-              <div className="adminText">Admin Cabang</div>
+
+              <div className="adminText">
+                Admin Cabang
+              </div>
             </div>
+
+            <button
+              className="logoutButton"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              type="button"
+            >
+              {loggingOut ? "Keluar..." : "Keluar"}
+            </button>
           </div>
         </header>
 
@@ -1289,10 +1310,13 @@ export default function DashboardPage() {
           {/* WELCOME */}
           <div className="welcome">
             <div>
-              <h1 className="welcomeTitle">Selamat Datang 👋</h1>
+              <h1 className="welcomeTitle">
+                Selamat Datang 👋
+              </h1>
+
               <p className="welcomeText">
-                Pantau kondisi pembangunan Huntap, penugasan kontraktor, dan
-                administrasi proyek dari satu halaman.
+                Pantau kondisi pembangunan Huntap, penugasan kontraktor,
+                dan administrasi proyek dari satu halaman.
               </p>
             </div>
 
@@ -1301,7 +1325,11 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {errorMessage && <div className="errorBox">{errorMessage}</div>}
+          {errorMessage && (
+            <div className="errorBox">
+              {errorMessage}
+            </div>
+          )}
 
           {/* STATISTICS */}
           <div className="statsGrid">
@@ -1310,16 +1338,26 @@ export default function DashboardPage() {
                 <div className="statLabel">Total Huntap</div>
                 <div className="statIcon blueIcon">⌂</div>
               </div>
-              <div className="statValue">{totalHuntap}</div>
-              <div className="statFooter">Seluruh unit terdaftar</div>
+
+              <div className="statValue">
+                {totalHuntap}
+              </div>
+
+              <div className="statFooter">
+                Seluruh unit terdaftar
+              </div>
             </div>
 
             <div className="statCard">
               <div className="statTop">
                 <div className="statLabel">Belum Mulai</div>
-                <div className="statIcon grayFill">○</div>
+                <div className="statIcon grayIcon">○</div>
               </div>
-              <div className="statValue">{huntapBelumMulai}</div>
+
+              <div className="statValue">
+                {huntapBelumMulai}
+              </div>
+
               <div className="statFooter">
                 {persentaseBelumMulai}% dari total Huntap
               </div>
@@ -1330,7 +1368,11 @@ export default function DashboardPage() {
                 <div className="statLabel">Pembangunan</div>
                 <div className="statIcon orangeIcon">↗</div>
               </div>
-              <div className="statValue">{huntapSedangPembangunan}</div>
+
+              <div className="statValue">
+                {huntapSedangPembangunan}
+              </div>
+
               <div className="statFooter">
                 {persentasePembangunan}% sedang dikerjakan
               </div>
@@ -1341,7 +1383,11 @@ export default function DashboardPage() {
                 <div className="statLabel">Selesai</div>
                 <div className="statIcon greenIcon">✓</div>
               </div>
-              <div className="statValue">{huntapSelesai}</div>
+
+              <div className="statValue">
+                {huntapSelesai}
+              </div>
+
               <div className="statFooter">
                 {persentaseSelesai}% sudah selesai
               </div>
@@ -1349,11 +1395,20 @@ export default function DashboardPage() {
 
             <div className="statCard">
               <div className="statTop">
-                <div className="statLabel">Rata-rata Progress</div>
+                <div className="statLabel">
+                  Rata-rata Progress
+                </div>
+
                 <div className="statIcon purpleIcon">%</div>
               </div>
-              <div className="statValue">{rataRataProgress}%</div>
-              <div className="statFooter">Progress keseluruhan Huntap</div>
+
+              <div className="statValue">
+                {rataRataProgress}%
+              </div>
+
+              <div className="statFooter">
+                Progress keseluruhan Huntap
+              </div>
             </div>
           </div>
 
@@ -1362,7 +1417,10 @@ export default function DashboardPage() {
             <div className="card">
               <div className="cardHeader">
                 <div>
-                  <div className="cardTitle">Progress Pembangunan</div>
+                  <div className="cardTitle">
+                    Progress Pembangunan
+                  </div>
+
                   <div className="cardSubtitle">
                     Kondisi keseluruhan pembangunan Huntap
                   </div>
@@ -1376,18 +1434,25 @@ export default function DashboardPage() {
                       <div className="circleNumber">
                         {rataRataProgress}%
                       </div>
-                      <div className="circleLabel">Progress</div>
+
+                      <div className="circleLabel">
+                        Progress
+                      </div>
                     </div>
                   </div>
 
                   <div className="progressDetails">
                     <div className="detailRow">
                       <div className="detailHeader">
-                        <span className="detailName">Belum Mulai</span>
+                        <span className="detailName">
+                          Belum Mulai
+                        </span>
+
                         <span className="detailValue">
                           {huntapBelumMulai} unit
                         </span>
                       </div>
+
                       <div className="bar">
                         <div
                           className="barFill grayFill"
@@ -1403,10 +1468,12 @@ export default function DashboardPage() {
                         <span className="detailName">
                           Sedang Pembangunan
                         </span>
+
                         <span className="detailValue">
                           {huntapSedangPembangunan} unit
                         </span>
                       </div>
+
                       <div className="bar">
                         <div
                           className="barFill orangeFill"
@@ -1419,11 +1486,15 @@ export default function DashboardPage() {
 
                     <div className="detailRow">
                       <div className="detailHeader">
-                        <span className="detailName">Selesai</span>
+                        <span className="detailName">
+                          Selesai
+                        </span>
+
                         <span className="detailValue">
                           {huntapSelesai} unit
                         </span>
                       </div>
+
                       <div className="bar">
                         <div
                           className="barFill greenFill"
@@ -1441,7 +1512,10 @@ export default function DashboardPage() {
             <div className="card">
               <div className="cardHeader">
                 <div>
-                  <div className="cardTitle">Akses Cepat</div>
+                  <div className="cardTitle">
+                    Akses Cepat
+                  </div>
+
                   <div className="cardSubtitle">
                     Menu yang sering digunakan
                   </div>
@@ -1452,31 +1526,48 @@ export default function DashboardPage() {
                 <div className="quickGrid">
                   <Link href="/huntap" className="quickAction">
                     <div className="quickIcon">⌂</div>
-                    <div className="quickTitle">Data Huntap</div>
+                    <div className="quickTitle">
+                      Data Huntap
+                    </div>
                     <div className="quickDesc">
                       Kelola data unit Huntap
                     </div>
                   </Link>
 
-                  <Link href="/kontraktor" className="quickAction">
+                  <Link
+                    href="/kontraktor"
+                    className="quickAction"
+                  >
                     <div className="quickIcon">▣</div>
-                    <div className="quickTitle">Kontraktor</div>
+                    <div className="quickTitle">
+                      Kontraktor
+                    </div>
                     <div className="quickDesc">
                       Kelola perusahaan pelaksana
                     </div>
                   </Link>
 
-                  <Link href="/progress" className="quickAction">
+                  <Link
+                    href="/progress"
+                    className="quickAction"
+                  >
                     <div className="quickIcon">↗</div>
-                    <div className="quickTitle">Update Progress</div>
+                    <div className="quickTitle">
+                      Update Progress
+                    </div>
                     <div className="quickDesc">
                       Perbarui progres pembangunan
                     </div>
                   </Link>
 
-                  <Link href="/laporan" className="quickAction">
+                  <Link
+                    href="/laporan"
+                    className="quickAction"
+                  >
                     <div className="quickIcon">▥</div>
-                    <div className="quickTitle">Laporan</div>
+                    <div className="quickTitle">
+                      Laporan
+                    </div>
                     <div className="quickDesc">
                       Lihat dan ekspor laporan
                     </div>
@@ -1490,7 +1581,10 @@ export default function DashboardPage() {
           <div className="card" style={{ marginBottom: 20 }}>
             <div className="cardHeader">
               <div>
-                <div className="cardTitle">Ringkasan Penugasan Huntap</div>
+                <div className="cardTitle">
+                  Ringkasan Penugasan Huntap
+                </div>
+
                 <div className="cardSubtitle">
                   Distribusi Huntap kepada kontraktor
                 </div>
@@ -1503,6 +1597,7 @@ export default function DashboardPage() {
                   <div className="assignmentNumber">
                     {totalTargetKontraktor}
                   </div>
+
                   <div className="assignmentLabel">
                     Target seluruh kontraktor
                   </div>
@@ -1512,7 +1607,11 @@ export default function DashboardPage() {
                   <div className="assignmentNumber">
                     {huntapSudahDitugaskan}
                   </div>
-                  <div className="assignmentLabel">Sudah ditugaskan</div>
+
+                  <div className="assignmentLabel">
+                    Sudah ditugaskan
+                  </div>
+
                   <div className="assignmentPercent">
                     {persentasePenugasan}% dari total
                   </div>
@@ -1522,7 +1621,10 @@ export default function DashboardPage() {
                   <div className="assignmentNumber">
                     {huntapBelumDitugaskan}
                   </div>
-                  <div className="assignmentLabel">Belum ditugaskan</div>
+
+                  <div className="assignmentLabel">
+                    Belum ditugaskan
+                  </div>
                 </div>
               </div>
 
@@ -1531,6 +1633,7 @@ export default function DashboardPage() {
                   <span className="detailName">
                     Tingkat penugasan Huntap
                   </span>
+
                   <span className="detailValue">
                     {persentasePenugasan}%
                   </span>
@@ -1548,11 +1651,14 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* CONTRACTORS */}
+          {/* KONTRAKTOR */}
           <div className="card" style={{ marginBottom: 20 }}>
             <div className="cardHeader">
               <div>
-                <div className="cardTitle">Ringkasan Kontraktor</div>
+                <div className="cardTitle">
+                  Ringkasan Kontraktor
+                </div>
+
                 <div className="cardSubtitle">
                   Monitoring penugasan dan progress setiap kontraktor
                 </div>
@@ -1582,9 +1688,14 @@ export default function DashboardPage() {
                         .toUpperCase();
 
                     return (
-                      <div className="contractorCard" key={item.id}>
+                      <div
+                        className="contractorCard"
+                        key={item.id}
+                      >
                         <div className="contractorHead">
-                          <div className="contractorLogo">{initials}</div>
+                          <div className="contractorLogo">
+                            {initials}
+                          </div>
 
                           <div>
                             <div className="contractorName">
@@ -1592,7 +1703,9 @@ export default function DashboardPage() {
                             </div>
 
                             <div className="contractorType">
-                              {item.jenis_perusahaan || "Perusahaan"}
+                              {item.jenis_perusahaan ||
+                                "Perusahaan"}
+
                               {item.nama_direktur
                                 ? ` • Direktur: ${item.nama_direktur}`
                                 : ""}
@@ -1605,6 +1718,7 @@ export default function DashboardPage() {
                             <div className="contractorStatNumber">
                               {item.jumlahHuntap}
                             </div>
+
                             <div className="contractorStatLabel">
                               Ditugaskan
                             </div>
@@ -1612,8 +1726,11 @@ export default function DashboardPage() {
 
                           <div className="contractorStat">
                             <div className="contractorStatNumber">
-                              {Number(item.target_huntap || 0)}
+                              {Number(
+                                item.target_huntap || 0
+                              )}
                             </div>
+
                             <div className="contractorStatLabel">
                               Target
                             </div>
@@ -1623,6 +1740,7 @@ export default function DashboardPage() {
                             <div className="contractorStatNumber">
                               {item.averageProgress}%
                             </div>
+
                             <div className="contractorStatLabel">
                               Progress
                             </div>
@@ -1631,9 +1749,16 @@ export default function DashboardPage() {
 
                         <div className="contractorProgress">
                           <div className="contractorProgressHeader">
-                            <span>Pencapaian target Huntap</span>
                             <span>
-                              {Math.min(item.pencapaian, 100)}%
+                              Pencapaian target Huntap
+                            </span>
+
+                            <span>
+                              {Math.min(
+                                item.pencapaian,
+                                100
+                              )}
+                              %
                             </span>
                           </div>
 
@@ -1664,12 +1789,15 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* DISTRIBUTION */}
+          {/* DISTRIBUSI */}
           <div className="grid2">
             <div className="card">
               <div className="cardHeader">
                 <div>
-                  <div className="cardTitle">Distribusi Progress Huntap</div>
+                  <div className="cardTitle">
+                    Distribusi Progress Huntap
+                  </div>
+
                   <div className="cardSubtitle">
                     Jumlah unit berdasarkan persentase progress
                   </div>
@@ -1715,10 +1843,14 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* KONDISI */}
             <div className="card">
               <div className="cardHeader">
                 <div>
-                  <div className="cardTitle">Kondisi Pembangunan</div>
+                  <div className="cardTitle">
+                    Kondisi Pembangunan
+                  </div>
+
                   <div className="cardSubtitle">
                     Ringkasan status seluruh Huntap
                   </div>
@@ -1728,7 +1860,10 @@ export default function DashboardPage() {
               <div className="cardBody">
                 <div className="detailRow">
                   <div className="detailHeader">
-                    <span className="detailName">Belum Mulai</span>
+                    <span className="detailName">
+                      Belum Mulai
+                    </span>
+
                     <span className="detailValue">
                       {huntapBelumMulai} unit
                     </span>
@@ -1749,6 +1884,7 @@ export default function DashboardPage() {
                     <span className="detailName">
                       Sedang Pembangunan
                     </span>
+
                     <span className="detailValue">
                       {huntapSedangPembangunan} unit
                     </span>
@@ -1766,7 +1902,10 @@ export default function DashboardPage() {
 
                 <div className="detailRow">
                   <div className="detailHeader">
-                    <span className="detailName">Selesai</span>
+                    <span className="detailName">
+                      Selesai
+                    </span>
+
                     <span className="detailValue">
                       {huntapSelesai} unit
                     </span>
@@ -1818,11 +1957,14 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* RECENT HUNTAP */}
+          {/* DATA HUNTAP TERBARU */}
           <div className="card tableCard">
             <div className="cardHeader">
               <div>
-                <div className="cardTitle">Data Huntap Terbaru</div>
+                <div className="cardTitle">
+                  Data Huntap Terbaru
+                </div>
+
                 <div className="cardSubtitle">
                   Daftar unit Huntap yang terakhir terdata
                 </div>
@@ -1839,7 +1981,9 @@ export default function DashboardPage() {
 
             <div className="tableWrap">
               {loading ? (
-                <div className="empty">Memuat data Huntap...</div>
+                <div className="empty">
+                  Memuat data Huntap...
+                </div>
               ) : huntap.length === 0 ? (
                 <div className="empty">
                   Belum ada data Huntap.
@@ -1861,7 +2005,9 @@ export default function DashboardPage() {
 
                   <tbody>
                     {huntap.slice(0, 10).map((item, index) => {
-                      const progress = Number(item.progress || 0);
+                      const progress = Number(
+                        item.progress || 0
+                      );
 
                       return (
                         <tr key={item.id}>
@@ -1871,17 +2017,27 @@ export default function DashboardPage() {
                             {item.kode_huntap || "-"}
                           </td>
 
-                          <td>{item.nomor_unit || "-"}</td>
+                          <td>
+                            {item.nomor_unit || "-"}
+                          </td>
 
                           <td className="recipient">
                             {item.nama_penerima || "-"}
                           </td>
 
-                          <td>{item.desa || "-"}</td>
+                          <td>
+                            {item.desa || "-"}
+                          </td>
 
                           <td>
-                            {getKontraktorName(item.kontraktor_id) || (
-                              <span style={{ color: "#a0a8b5" }}>
+                            {getKontraktorName(
+                              item.kontraktor_id
+                            ) || (
+                              <span
+                                style={{
+                                  color: "#a0a8b5",
+                                }}
+                              >
                                 Belum ditugaskan
                               </span>
                             )}
@@ -1893,7 +2049,9 @@ export default function DashboardPage() {
                                 item.status
                               )}`}
                             >
-                              {getStatusLabel(item.status)}
+                              {getStatusLabel(
+                                item.status
+                              )}
                             </span>
                           </td>
 
@@ -1905,7 +2063,10 @@ export default function DashboardPage() {
                                   style={{
                                     width: `${Math.max(
                                       0,
-                                      Math.min(progress, 100)
+                                      Math.min(
+                                        progress,
+                                        100
+                                      )
                                     )}%`,
                                   }}
                                 />
